@@ -1,0 +1,368 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_app_day12/pokeDetail.dart';
+import 'package:flutter_app_day12/pokedata.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main()=>runApp(
+  MaterialApp(
+    title: "Poke App",
+    theme: ThemeData(
+
+    ),
+    home: HomePage(),
+    debugShowCheckedModeBanner: false,
+  )
+);
+
+class HomePage extends StatefulWidget {
+  @override
+  HomePageState createState() {
+    return new HomePageState();
+  }
+}
+
+class HomePageState extends State<HomePage> {
+
+  var url="https://raw.githubusercontent.com/Biuni/PokemonGO-Pokedex/master/pokedex.json";
+
+  PokeHub pokehub;
+
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    fetchData();
+
+  }
+
+  fetchData()async{
+    var res=await http.get(url);
+    var decodedValue=  jsonDecode(res.body);
+
+    pokehub=PokeHub.fromJson(decodedValue);
+
+    print(pokehub);
+    setState(() {
+
+    });
+
+
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pokemon ',
+
+        style: TextStyle(
+          fontSize: 30.0,
+          fontFamily: 'Avantgarde, TeX Gyre Adventor, URW Gothic L, sans-serif'
+        ),
+
+        ),
+        elevation: 25.0,
+      ),
+      drawer: Drawer(),
+      floatingActionButton: FloatingActionButton(onPressed: ()
+      {
+
+      },
+        child: Icon(Icons.refresh),
+        elevation: 15.0,
+
+      ),
+
+      body: pokehub==null?
+      Center(
+        child: CircularProgressIndicator(),
+      )
+
+          :GridView.count(crossAxisCount: 2,
+
+        children: pokehub.pokemon.map((Pokemon poke)=>Padding(
+          padding: const EdgeInsets.all(4.0),
+
+
+          child: InkWell(
+            onTap: (){
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context)=>PokeDetail(
+                pokemon: poke,
+              )));
+            },
+            child: Card(
+            elevation: 3.0,
+
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+
+                  Hero(
+                    tag: poke.img,
+                    child: Container(
+                      height: 150.0,
+                      width: 150.0,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(image: NetworkImage(poke.img))
+                      ),
+                    ),
+                  ),
+
+
+                  Text(poke.name,
+                  style: TextStyle(
+                    fontSize: 22.0,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.bold
+                  ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )).toList(),
+
+      )
+    );
+  }
+}
+=============================================================this was main .dart file==========================================
+
+
+
+
+=====================================================now this is pokemondata file====================================================
+
+import 'package:flutter/material.dart';
+import 'package:flutter_app_day12/pokedata.dart';
+
+class PokeDetail extends StatelessWidget {
+
+  final Pokemon pokemon;
+
+  const PokeDetail({Key key, this.pokemon}) : super(key: key);
+
+
+  bodyWidget(BuildContext context)=>Stack(
+    children: <Widget>[
+
+      Positioned(
+        height: MediaQuery.of(context).size.height/1.5,
+        width: MediaQuery.of(context).size.width-20,
+        left: 10.0,
+        top: MediaQuery.of(context).size.height*0.1,
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0)
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+            children: <Widget>[
+              SizedBox(
+                height: 80.0,
+              ),
+              Text(pokemon.name,
+              style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+              ),
+              ),
+              Text("Height:${pokemon.height}"),
+              Text("Weight:${pokemon.weight}"),
+              Text("Types"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children:pokemon.type.map((t)=>FilterChip(label: Text(t),
+                    backgroundColor: Colors.amber,
+                    onSelected: (b){})).toList()
+              ),
+              Text("Weakness"),
+              Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children:pokemon.weaknesses.map((t)=>FilterChip(
+                      label: Text(t,
+                      style: TextStyle(color: Colors.white),),
+                      backgroundColor: Colors.red,
+                      onSelected: (b){})).toList()
+
+              )
+
+            ],
+          ),
+        ),
+      ),
+
+      Align(
+        alignment: Alignment.topCenter,
+        child: Hero(tag: pokemon.img, child: Container(
+          height: 200.0,
+          width: 200.0,
+          decoration: BoxDecoration(
+              image: DecorationImage(image: NetworkImage(pokemon.img),
+              fit: BoxFit.cover)),
+        )),
+      )
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+
+
+    return Scaffold(
+      backgroundColor: Colors.cyanAccent,
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(pokemon.name),
+        backgroundColor: Colors.cyanAccent,
+      ),
+      body: bodyWidget(context),
+    );
+  }
+}
+=========================================================thi swas poke detail file==========================================================
+
+
+
+
+===================================================now json converted file is==============================================================
+
+
+
+class PokeHub {
+  List<Pokemon> pokemon;
+
+  PokeHub({this.pokemon});
+
+  PokeHub.fromJson(Map<String, dynamic> json) {
+    if (json['pokemon'] != null) {
+      pokemon = new List<Pokemon>();
+      json['pokemon'].forEach((v) {
+        pokemon.add(new Pokemon.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    if (this.pokemon != null) {
+      data['pokemon'] = this.pokemon.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Pokemon {
+  int id;
+  String num;
+  String name;
+  String img;
+  List<String> type;
+  String height;
+  String weight;
+  String candy;
+  int candyCount;
+  String egg;
+  String spawnChance;
+  String avgSpawns;
+  String spawnTime;
+  List<double> multipliers;
+  List<String> weaknesses;
+  List<NextEvolution> nextEvolution;
+
+  Pokemon(
+      {this.id,
+        this.num,
+        this.name,
+        this.img,
+        this.type,
+        this.height,
+        this.weight,
+        this.candy,
+        this.candyCount,
+        this.egg,
+        this.spawnChance,
+        this.avgSpawns,
+        this.spawnTime,
+        this.multipliers,
+        this.weaknesses,
+        this.nextEvolution});
+
+  Pokemon.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    num = json['num'];
+    name = json['name'];
+    img = json['img'];
+    type = json['type'].cast<String>();
+    height = json['height'];
+    weight = json['weight'];
+    candy = json['candy'];
+    candyCount = json['candy_count'];
+    egg = json['egg'];
+    spawnChance = json['spawn_chance'].toString();
+    avgSpawns = json['avg_spawns'].toString();
+    spawnTime = json['spawn_time'];
+    multipliers = json['multipliers']?.cast<double>();
+    weaknesses = json['weaknesses'].cast<String>();
+    if (json['next_evolution'] != null) {
+      nextEvolution = new List<NextEvolution>();
+      json['next_evolution'].forEach((v) {
+        nextEvolution.add(new NextEvolution.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['num'] = this.num;
+    data['name'] = this.name;
+    data['img'] = this.img;
+    data['type'] = this.type;
+    data['height'] = this.height;
+    data['weight'] = this.weight;
+    data['candy'] = this.candy;
+    data['candy_count'] = this.candyCount;
+    data['egg'] = this.egg;
+    data['spawn_chance'] = this.spawnChance;
+    data['avg_spawns'] = this.avgSpawns;
+    data['spawn_time'] = this.spawnTime;
+    data['multipliers'] = this.multipliers;
+    data['weaknesses'] = this.weaknesses;
+    if (this.nextEvolution != null) {
+      data['next_evolution'] =
+          this.nextEvolution.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class NextEvolution {
+  String num;
+  String name;
+
+  NextEvolution({this.num, this.name});
+
+  NextEvolution.fromJson(Map<String, dynamic> json) {
+    num = json['num'];
+    name = json['name'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['num'] = this.num;
+    data['name'] = this.name;
+    return data;
+  }
+}
+
+
+================================================copy these 3 files===========================================================
